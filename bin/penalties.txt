@@ -1,0 +1,6 @@
+LD 2
+SD 1
+MUL 4
+ADD 3
+DIV 4
+SUB 3
