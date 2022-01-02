@@ -19,6 +19,9 @@ public class ALU_Operations {
 	public void update () {
 		this.cycles = cycles -1 ;
 	}
+	public boolean checkCycles(){
+		return cycles==0?true:false;
+	}
 	@Override
 	public String toString() {
 		return "ALU_Operations [" + (op != null ? "op=" + op + ", " : "") + "Vj=" + Vj + ", Vk=" + Vk + ", "

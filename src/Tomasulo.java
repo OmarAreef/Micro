@@ -24,6 +24,7 @@ public class Tomasulo {
 		curCycle++;
 		init(new File("src/input.txt"), new File("src/penalties.txt"));
 		while (!instQueue.isEmpty()) {
+			checkCycles () ;
 			Instruction inst = instQueue.peek();
 			String opCode = inst.op;
 			int penalty = penalties.get(opCode);
@@ -37,8 +38,8 @@ public class Tomasulo {
 					ALU_Operations operation = new ALU_Operations(opCode, (float) 0.0, (float) 0.0, "", "", true,
 							penalty);
 					inst.issue = curCycle;
-					int address1 = Integer.parseInt(inst.j.split("")[1]) ;
-					int address2 = Integer.parseInt(inst.k.split("")[1]) ;
+					int address1 = Integer.parseInt(inst.j.split("")[1]);
+					int address2 = Integer.parseInt(inst.k.split("")[1]);
 					if (regFile[address1].q.equals("0")) {
 						operation.Vj = regFile[address1].RegValue;
 					} else {
@@ -63,8 +64,8 @@ public class Tomasulo {
 					ALU_Operations operation = new ALU_Operations(opCode, (float) 0.0, (float) 0.0, "", "", true,
 							penalty);
 					inst.issue = curCycle;
-					int address1 = Integer.parseInt(inst.j.split("")[1]) ;
-					int address2 = Integer.parseInt(inst.k.split("")[1]) ;
+					int address1 = Integer.parseInt(inst.j.split("")[1]);
+					int address2 = Integer.parseInt(inst.k.split("")[1]);
 					if (regFile[address1].q.equals("0")) {
 						operation.Vj = regFile[address1].RegValue;
 					} else {
@@ -101,7 +102,7 @@ public class Tomasulo {
 				if (checkStation(opCode) != -1) {
 					Store_Buffer operation = new Store_Buffer(0, (float) 0.0, "", true, penalty);
 					inst.issue = curCycle;
-					int address1 = Integer.parseInt(inst.d.split("")[1]) ;
+					int address1 = Integer.parseInt(inst.d.split("")[1]);
 					if (regFile[address1].q.equals("0")) {
 						operation.V = regFile[address1].RegValue;
 					} else {
@@ -120,6 +121,31 @@ public class Tomasulo {
 		}
 	}
 
+	private static void checkCycles() {
+		for (int i = 0; i < 2; i++) {
+			// check ADD_SUB
+			if (ADD_SUB[i].checkCycles()) {
+				// remove from station+do operation
+				String tag = ADD_SUB[i].op + i ;
+			}
+			// check MUL_DIV
+			if (MUL_DIV[i].checkCycles()) {
+				// remove from station+do operation
+				String tag = MUL_DIV[i].op + i ;
+			}
+			// check lBUffer
+			if (lBuffer[i].checkCycles()) {
+				// remove from buffer+do operation
+				String tag = "LD" + i ;
+			}
+			// check sBUffer
+			if (sBuffer[i].checkCycles()) {
+				// remove from buffer+do operation
+				String tag = "SD"+ i ;
+			}
+		}
+	}
+
 	private static void updateCycles() {
 		// TODO Auto-generated method stub
 		List<ALU_Operations> ar = Arrays.asList(ADD_SUB);
@@ -129,7 +155,6 @@ public class Tomasulo {
 			}
 		});
 		ADD_SUB = ar.toArray(new ALU_Operations[0]);
-		
 		List<ALU_Operations> md = Arrays.asList(MUL_DIV);
 		md.stream().forEach(ss -> {
 			if (ss != null) {
@@ -137,7 +162,6 @@ public class Tomasulo {
 			}
 		});
 		MUL_DIV = md.toArray(new ALU_Operations[0]);
-		
 		List<Load_Buffer> ld = Arrays.asList(lBuffer);
 		ld.stream().forEach(ss -> {
 			if (ss != null) {
@@ -145,7 +169,6 @@ public class Tomasulo {
 			}
 		});
 		lBuffer = ld.toArray(new Load_Buffer[0]);
-		
 		List<Store_Buffer> sd = Arrays.asList(sBuffer);
 		sd.stream().forEach(ss -> {
 			if (ss != null) {
@@ -153,7 +176,6 @@ public class Tomasulo {
 			}
 		});
 		sBuffer = ld.toArray(new Store_Buffer[0]);
-		
 	}
 
 	public static int checkStation(String op) {

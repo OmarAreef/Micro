@@ -12,6 +12,9 @@ public class Load_Buffer {
 	public void update () {
 		this.cycles = cycles -1 ;
 	}
+	public boolean checkCycles(){
+		return cycles==0?true:false;
+	}
 	public String display() {
 		String s="";
 		return s;
