@@ -145,6 +145,15 @@ public class Tomasulo {
 			}
 		}
 	}
+	private static void updateReg (String location , float value) {
+		for (int i = 0 ; i < regFile.length ; i ++ ) {
+			if (regFile[i].q.equals(location)) {
+				regFile[i].RegValue = value ; 
+				regFile[i].q = "0" ;
+			}
+		}
+		
+	}
 
 	private static void updateCycles() {
 		// TODO Auto-generated method stub
