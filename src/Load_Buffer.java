@@ -15,6 +15,10 @@ public class Load_Buffer {
 	public boolean checkCycles(){
 		return cycles==0?true:false;
 	}
+	@Override
+	public String toString() {
+		return "Load_Buffer [address=" + address + ", cycles=" + cycles + ", busy=" + busy + "] \n";
+	}
 	public String display() {
 		String s="";
 		return s;

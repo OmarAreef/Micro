@@ -16,19 +16,20 @@ public class Tomasulo {
 	static Load_Buffer[] lBuffer = new Load_Buffer[2];
 	static Store_Buffer[] sBuffer = new Store_Buffer[2];
 	static RegFile[] regFile = new RegFile[33];
+	static float[] Memory = new float[200];
 	static Queue<Instruction> instQueue = new LinkedList<Instruction>();
 	static Map<String, Integer> penalties = new HashMap<>();
 	static int curCycle = -1;
 
 	public static void startTomasulo() throws IOException {
-		curCycle++;
 		init(new File("src/input.txt"), new File("src/penalties.txt"));
 		while (!instQueue.isEmpty()) {
-			checkCycles () ;
+			curCycle++;
+			display();
+			checkCycles();
 			Instruction inst = instQueue.peek();
 			String opCode = inst.op;
 			int penalty = penalties.get(opCode);
-			System.out.println(Arrays.toString(ADD_SUB));
 			updateCycles();
 			switch (opCode) {
 			case "ADD":
@@ -112,47 +113,123 @@ public class Tomasulo {
 					operation.address = memoryAddress;
 					int placee = checkStation(opCode);
 					inst.tag = opCode + placee;
-					regFile[Integer.parseInt(inst.d.split("")[1])].q = inst.tag;
+					// regFile[Integer.parseInt(inst.d.split("")[1])].q = inst.tag;
 					sBuffer[placee] = operation;
 					instQueue.poll();
 				}
 				break;
 			}
 		}
+		finishExecution();
+	}
+
+	private static void finishExecution() {
+		while (ADD_SUB[0] != null || ADD_SUB[1] != null || MUL_DIV[0] != null || MUL_DIV[1] != null
+				|| sBuffer[0] != null || lBuffer[0] != null || sBuffer[1] != null || lBuffer[1] != null) {
+			curCycle++;
+			checkCycles();
+			updateCycles();
+			display();
+		}
 	}
 
 	private static void checkCycles() {
+		boolean update = false;
+		String tag = "";
+		float value = 0;
 		for (int i = 0; i < 2; i++) {
-			// check ADD_SUB
-			if (ADD_SUB[i].checkCycles()) {
+			if (ADD_SUB[i] != null && ADD_SUB[i].checkCycles()) {
 				// remove from station+do operation
-				String tag = ADD_SUB[i].op + i ;
+				update = true;
+				tag = ADD_SUB[i].op + i;
+				if (ADD_SUB[i].op.equals("ADD")) {
+					value = ADD_SUB[i].Vj + ADD_SUB[i].Vk;
+				}
+				if (ADD_SUB[i].op.equals("SUB")) {
+					value = ADD_SUB[i].Vj - ADD_SUB[i].Vk;
+				}
+				ADD_SUB[i] = null;
+				updateReg(tag, value);
+				updateBus(tag, value);
 			}
 			// check MUL_DIV
-			if (MUL_DIV[i].checkCycles()) {
+			if (MUL_DIV[i] != null && MUL_DIV[i].checkCycles()) {
 				// remove from station+do operation
-				String tag = MUL_DIV[i].op + i ;
+				update = true;
+				tag = MUL_DIV[i].op + i;
+				if (MUL_DIV[i].op.equals("MUL")) {
+					value = MUL_DIV[i].Vj * MUL_DIV[i].Vk;
+					System.out.println("MUL IS" + value);
+				}
+				if (MUL_DIV[i].op.equals("DIV")) {
+					value = MUL_DIV[i].Vj / MUL_DIV[i].Vk;
+				}
+				MUL_DIV[i] = null;
+				updateReg(tag, value);
+				updateBus(tag, value);
+			}
+			if (sBuffer[i] != null && sBuffer[i].checkCycles()) {
+				// remove from buffer+do operation
+				// write back to memory
+				tag = "SD" + i;
+				int address = sBuffer[i].address;
+				value = sBuffer[i].V;
+				Memory[address] = value;
+				sBuffer[i] = null;
+				// updateReg(tag, value);
+				// updateBus(tag, value);
 			}
 			// check lBUffer
-			if (lBuffer[i].checkCycles()) {
+			if (lBuffer[i] != null && lBuffer[i].checkCycles()) {
 				// remove from buffer+do operation
-				String tag = "LD" + i ;
+				update = true;
+				tag = "LD" + i;
+				int address = lBuffer[i].address;
+				value = Memory[address];
+				lBuffer[i] = null;
+				updateReg(tag, value);
+				updateBus(tag, value);
 			}
 			// check sBUffer
-			if (sBuffer[i].checkCycles()) {
-				// remove from buffer+do operation
-				String tag = "SD"+ i ;
+		}
+	}
+
+	private static void updateReg(String location, float value) {
+		for (int i = 0; i < regFile.length; i++) {
+			if (regFile[i].q.equals(location)) {
+				regFile[i].RegValue = value;
+				regFile[i].q = "0";
 			}
 		}
 	}
-	private static void updateReg (String location , float value) {
-		for (int i = 0 ; i < regFile.length ; i ++ ) {
-			if (regFile[i].q.equals(location)) {
-				regFile[i].RegValue = value ; 
-				regFile[i].q = "0" ;
+
+	private static void updateBus(String location, float value) {
+		for (int i = 0; i < 2; i++) {
+			if (ADD_SUB[i] != null) {
+				if (ADD_SUB[i].Qj.equals(location)) {
+					ADD_SUB[i].Qj = "";
+					ADD_SUB[i].Vj = value;
+				}
+				if (ADD_SUB[i].Qk.equals(location)) {
+					ADD_SUB[i].Qk = "";
+					ADD_SUB[i].Vk = value;
+				}
+			}
+			if (MUL_DIV[i] != null) {
+				if (MUL_DIV[i].Qj.equals(location)) {
+					MUL_DIV[i].Qj = "";
+					MUL_DIV[i].Vj = value;
+				}
+				if (MUL_DIV[i].Qk.equals(location)) {
+					MUL_DIV[i].Qk = "";
+					MUL_DIV[i].Vk = value;
+				}
+			}
+			if (sBuffer[i] != null && sBuffer[i].Q.equals(location)) {
+				sBuffer[i].Q = "";
+				sBuffer[i].V = value;
 			}
 		}
-		
 	}
 
 	private static void updateCycles() {
@@ -184,7 +261,7 @@ public class Tomasulo {
 				ss.update();
 			}
 		});
-		sBuffer = ld.toArray(new Store_Buffer[0]);
+		sBuffer = sd.toArray(new Store_Buffer[0]);
 	}
 
 	public static int checkStation(String op) {
@@ -246,9 +323,28 @@ public class Tomasulo {
 			penalties.put(stPenalty[0], Integer.parseInt(stPenalty[1]));
 		}
 		br.close();
-		for (int i = 0; i < regFile.length; i++) {
-			regFile[i] = new RegFile();
+		regFile[0] = new RegFile("0" , 0);
+		for (int i = 1; i < regFile.length; i++) {
+			regFile[i] = new RegFile(i);
 		}
+	}
+
+	public static void display() {
+		System.out.println("\t*-*-*-*-*-*- Cycle:" + curCycle + " -*-*-*-*-*-*");
+		if (!instQueue.isEmpty()) {
+			System.out.println("------ Instruction Queue ------");
+			System.out.println(Arrays.toString(instQueue.toArray()));
+		}
+		System.out.println("------ ADD/SUB station ------");
+		System.out.println(Arrays.toString(ADD_SUB));
+		System.out.println("------ MUL/DIV station ------");
+		System.out.println(Arrays.toString(MUL_DIV));
+		System.out.println("------ Load buffer ------");
+		System.out.println(Arrays.toString(lBuffer));
+		System.out.println("------Store buffer------");
+		System.out.println(Arrays.toString(sBuffer));
+		System.out.println("------ Register File ------");
+		System.out.println(Arrays.toString(regFile));
 	}
 
 	public static void main(String[] args) {
@@ -258,7 +354,5 @@ public class Tomasulo {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println(instQueue.toString());
-		System.out.println(penalties.toString());
 	}
 }

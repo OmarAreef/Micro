@@ -1,18 +1,28 @@
-public class RegFile{
+public class RegFile {
+	int location;
 	String q;
 	float RegValue;
 
-	public RegFile(){
-		this.q="0";
-		this.RegValue=(float) 2.3;
-
+	public RegFile(int i) {
+		this.q = "0";
+		this.location = i;
+		this.RegValue = (float) 2.3;
 	}
-	public RegFile(String q, float RegValue){
-		this.q=q;
-		this.RegValue=RegValue;
 
+	@Override
+	public String toString() {
+		return "Register [location=" + location + " | " + (q != null ? "q=" + q + " | " : "") + "RegValue=" + RegValue
+				+ "] \n";
 	}
+
+	public RegFile(String q, float RegValue ) {
+		this.q = q;
+		this.location = 0 ;
+		this.RegValue = RegValue;
+	}
+
 	public String display() {
-		String s="";
+		String s = "";
 		return s;
-	}}
+	}
+}
